@@ -1,0 +1,113 @@
+// CS42448 DT Definitions
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/rockchip.h>
+#include <dt-bindings/clock/rk3308-cru.h>
+/ {
+        compatible = "radxa,rockpis", "rockchip,rk3308";
+
+        fragment@0 {
+          target = <&i2c1>;
+          __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            status = "okay";
+            cs42448: cs42448@48 {
+                compatible = "cirrus,cs42448";
+                reg = <0x48>;
+                clocks = <&cru SCLK_I2S0_8CH_TX_OUT>;
+                clock-names = "mclk";
+                VA-supply = <&vcc_3v3_codec>;
+                VD-supply = <&vcc_3v3_codec>;
+                VLS-supply = <&vcc_3v3_codec>;
+                VLC-supply = <&vcc_3v3_codec>;
+                #sound-dai-cells = <0>;
+                status = "okay";
+            };
+
+          };
+       };
+
+      fragment@1 {
+          target = <&acodec>;
+          __overlay__ {
+            status = "disabled";
+          };
+      };
+
+      fragment@2 {
+                target = <&i2s_8ch_0>;
+                   __overlay__ {
+                         #sound-dai-cells = <0>;
+                         rockchip,clk-trcm = <0>;
+                         rockchip,bclk-fs = <256>;
+                         status = "okay";
+                  };
+               };
+
+        fragment@3 {
+            target = <&i2s_8ch_2>;
+            __overlay__ {
+                        #sound-dai-cells = <0>;
+                        status = "disabled";
+                        };
+               };
+
+        fragment@4 {
+                target-path = "/";
+                __overlay__ {
+                        sound_i2s {
+                                compatible = "simple-audio-card";
+                                simple-audio-card,name = "cirrus,cs42448";
+                                simple-audio-card,format = "dsp_a";
+                                simple-audio-card,mclk-fs = <256>;
+                                simple-audio-card,bitclock-master = <&cpu_dai>;
+                                simple-audio-card,frame-master = <&cpu_dai>;
+                                simple-audio-card,widgets =
+                                    "Speaker", "Channel1out",
+                                    "Speaker", "Channel2out",
+                                    "Speaker", "Channel3out",
+                                    "Speaker", "Channel4out",
+                                    "Speaker", "Channel5out",
+                                    "Speaker", "Channel6out",
+                                    "Speaker", "Channel7out",
+                                    "Speaker", "Channel8out",
+                                    "Line", "Channel1in",
+                                    "Line", "Channel2in",
+                                    "Line", "Channel3in",
+                                    "Line", "Channel4in",
+                                    "Line", "Channel5in",
+                                    "Line", "Channel6in";
+                                simple-audio-card,routing =
+                                    "Channel1out", "AOUT1L",
+                                    "Channel2out", "AOUT1R",
+                                    "Channel3out", "AOUT2L",
+                                    "Channel4out", "AOUT2R",
+                                    "Channel5out", "AOUT3L",
+                                    "Channel6out", "AOUT3R",
+                                    "Channel7out", "AOUT4L",
+                                    "Channel8out", "AOUT4R",
+                                    "AIN1L", "Channel1in",
+                                    "AIN1R", "Channel2in",
+                                    "AIN2L", "Channel3in",
+                                    "AIN2R", "Channel4in",
+                                    "AIN3L", "Channel5in",
+                                    "AIN3R", "Channel6in";
+                                status = "okay";
+
+                                cpu_dai: simple-audio-card,cpu {
+                                  dai-tdm-slot-num = <8>;
+                                  dai-tdm-slot-width = <32>;
+                                  system-clock-frequency = <49152000>;
+                                  sound-dai = <&i2s_8ch_0>;
+                                };
+                                codec_dai: simple-audio-card,codec {
+                                   sound-dai = <&cs42448>;
+                                   system-clock-frequency = <49152000>;
+                                };
+                         };
+                };
+        };
+};

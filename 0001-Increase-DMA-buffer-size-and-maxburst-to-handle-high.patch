@@ -1,0 +1,55 @@
+From 7176e745b936a0799acbb19f51c314a7c3f56749 Mon Sep 17 00:00:00 2001
+From: faust93 <monumentum@gmail.com>
+Date: Sat, 9 Mar 2024 18:12:46 +0200
+Subject: [PATCH] Increase DMA buffer size and maxburst to handle higher sample
+ rates (eg 96Khz/24Bit/8Chn) and use TDM_SHIFT_CTRL 1 to avoid sound
+ distortion
+
+---
+ drivers/dma/pl330.c                   | 2 +-
+ sound/soc/rockchip/rockchip_i2s_tdm.c | 6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/dma/pl330.c b/drivers/dma/pl330.c
+index 55723340..4d0f0958 100644
+--- a/drivers/dma/pl330.c
++++ b/drivers/dma/pl330.c
+@@ -248,7 +248,7 @@ enum pl330_byteswap {
+  * For typical scenario, at 1word/burst, 10MB and 20MB xfers per req
+  * should be enough for P<->M and M<->M respectively.
+  */
+-#define MCODE_BUFF_PER_REQ	256
++#define MCODE_BUFF_PER_REQ	512
+ 
+ /* Use this _only_ to wait on transient states */
+ #define UNTIL(t, s)	while (!(_state(t) & (s))) cpu_relax();
+diff --git a/sound/soc/rockchip/rockchip_i2s_tdm.c b/sound/soc/rockchip/rockchip_i2s_tdm.c
+index 499b991c..3dff27c9 100644
+--- a/sound/soc/rockchip/rockchip_i2s_tdm.c
++++ b/sound/soc/rockchip/rockchip_i2s_tdm.c
+@@ -545,7 +545,7 @@ static int rockchip_i2s_tdm_set_fmt(struct snd_soc_dai *cpu_dai,
+ 			break;
+ 		case SND_SOC_DAIFMT_DSP_A:
+ 			val = I2S_TXCR_TFS_TDM_PCM;
+-			tdm_val = TDM_SHIFT_CTRL(0);
++			tdm_val = TDM_SHIFT_CTRL(1);
+ 			break;
+ 		case SND_SOC_DAIFMT_DSP_B:
+ 			val = I2S_TXCR_TFS_TDM_PCM;
+@@ -1572,11 +1572,11 @@ static int rockchip_i2s_tdm_probe(struct platform_device *pdev)
+ 
+ 	i2s_tdm->playback_dma_data.addr = res->start + I2S_TXDR;
+ 	i2s_tdm->playback_dma_data.addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+-	i2s_tdm->playback_dma_data.maxburst = 8;
++	i2s_tdm->playback_dma_data.maxburst = 16;
+ 
+ 	i2s_tdm->capture_dma_data.addr = res->start + I2S_RXDR;
+ 	i2s_tdm->capture_dma_data.addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+-	i2s_tdm->capture_dma_data.maxburst = 8;
++	i2s_tdm->capture_dma_data.maxburst = 16;
+ 
+ 	ret = rockchip_i2s_tdm_tx_path_prepare(i2s_tdm, node);
+ 	if (ret < 0) {
+-- 
+2.43.0
+
